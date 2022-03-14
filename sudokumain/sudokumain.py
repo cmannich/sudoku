@@ -1,7 +1,7 @@
 '''
 Created on Feb 20, 2022
 
-@author: crim
+@author: Christoph Mannich
 '''
 # Include the PySFML extension
 from sfml import sf
@@ -19,8 +19,22 @@ font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-
 
 
 
-# Each sudoku square contains an object defined by class box which contains all aspects and state of the square
+# Each sudoku square contains an object defined by the class box which contains all aspects and state of the square
+# except the text represented by the value. This was because some early problems with the text font (that still remain)
 # Each sudoko contains 81 squares in an 9x9 grid. Each square has an index, 0 is top left and 80 is bottom right
+# The rows are numbered 0 -8 and the columns are numbered 0-8.
+# Each sudoko has 9 quadrants, each containing 3x3 squares
+# 
+# Hover over a square and press a number to enter the number into the square.
+# Clear a square with space
+# Press l to toggle the lock on the square.
+# Press p to show possible numbers in empty squares.
+# Paint an overlay on a square with mouse button
+
+# Problems:
+#    The sfml event handler crashes on scrollwheel events
+#    The font renderer creates a point in the beginning of each string. 
+#    Some fonts always has an extra character in the beginning of each string 
 
 
 
@@ -66,7 +80,6 @@ def index2posSize(index: int):
 square = []
 for index in range(81):
     position, size = index2posSize(index)
-    #size = sf.Vector2(75,75)
     square.append(box(position, size, 0, 0, " "))
 
 textarray = []
@@ -74,7 +87,7 @@ for index in range(81):
     text = sf.Text()
     
     text.font = font1
-    text.string = " " # str(square[index].value)
+    text.string = " " 
     text.character_size = 50
     text.color = sf.Color.WHITE
 
@@ -88,12 +101,10 @@ for index in range(81):
 
 # given a mouse position give the index of the square
 def coor2index(position: sf.Vector2):
-    #print(position)
     xx = ((position.x - 11) // 75)
     yy = ((position.y - 11)// 75)
     if xx>8 or yy>8:
         return -1
-    #print("X:" + str(xx) + " Y:" + str(yy))
     return xx + yy * 9
 
 # It seemed a good idea in the beginning but has never been used
@@ -102,7 +113,6 @@ def index2coor(index: int):
     xx = index - yy * 9 
     ypos = yy * 75 + 10
     xpos = xx * 75 + 10
-    #print("X:" + str(xpos) + " Y:" + str(ypos))
     return sf.Vector2(xpos,ypos)
 
 # Paint a square at a position, size and color. Used for background and overlay colors
@@ -136,7 +146,7 @@ def grid(window):
     rectangle = sf.RectangleShape(sf.Vector2(676,1))
     rectangle.position = sf.Vector2(10,10)
     rectangle.fill_color = sf.Color.RED
-    #window.draw(rectangle)
+
     xpos = 9
     ypos = 10
     
@@ -161,7 +171,6 @@ def eventManager(window):
     global square
     
     for event in window.events:
-        #print(event)
         if (type(event) == sf.CloseEvent):
             print("CloseEvent")
             running = False
@@ -193,7 +202,7 @@ def eventManager(window):
                     if possible == True:
                         updatePossible()
             
-            if c =="L" or c=="l":
+            if c =="L" or c=="l":     # Locking the value, no accidental changes
                 if square[focusIndex].lock == 0:
                     square[focusIndex].lock = 1
                     print("Locked")
@@ -211,6 +220,7 @@ def eventManager(window):
     return running        
 
 # Just some predefined colors
+# right now they are translucent (alfa is 128)
 def getColor(color: int):
 
     if color == 1:
@@ -227,22 +237,17 @@ def getColor(color: int):
         return sf.Color(255,0,255,128)
     else:
         return sf.Color(255,255,255,128)
-    
 
 # This is where we can paint translucent squares on top of the sudoku grid
 def overlaylayer(window):
     for index in range(81):
         if square[index].overlay == 1:
-            #print("Index:" + str(index))
             position = square[index].position
             size = square[index].size
             paintsquare(window, position, size, getColor(1))
 
 # This is the rendering of the squares value 
 def textlayer(window):
-    global font
-    global textarray
-    global square
     
     for index in range(81):
         text = textarray[index]
@@ -251,7 +256,8 @@ def textlayer(window):
             text.color = sf.Color.BLACK
         else:
             text.color = sf.Color.WHITE
-        window.draw(text)  
+        window.draw(text) 
+         
 # rendering of the background of the square in focus, the square you are hovering over is lighted up
 def backgroundlayer(window):
     if focusIndex != -1:
@@ -267,9 +273,11 @@ def bottomColor(window):
     rectangle.fill_color = sf.Color(128,128,128,255)
     window.draw(rectangle)
     
+# Not used right now
 def firstCheat(windows):
     return 0
 
+# Not used right now
 def rulesLayer(windows):
     return 0
 
@@ -353,7 +361,7 @@ def getPossible(index):
 
 # Update each square with the possible numbers        
 def updatePossible():
-    global square
+    #global square
     
     for index in range(81):
         square[index].possible = getPossible(index)
