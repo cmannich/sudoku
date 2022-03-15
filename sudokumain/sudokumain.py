@@ -39,7 +39,7 @@ font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-
 
 
 class box:
-    def __init__(self, position: sf.Vector2, size: sf.Vector2, overlay = 0, background= 0 , value = " ", lock = 0):
+    def __init__(self, position: sf.Vector2, size: sf.Vector2, overlay = 0, background = 0 , value = " ", lock = 0, valueText = sf.Text()):
         self.position = position
         self.size = size
         self.overlay = overlay
@@ -47,6 +47,7 @@ class box:
         self.value = value
         self.lock = lock
         self.possible = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        self.valueText = valueText
 
 # Get the position and size of a square given it index
 def index2posSize(index: int):
@@ -80,10 +81,6 @@ def index2posSize(index: int):
 square = []
 for index in range(81):
     position, size = index2posSize(index)
-    square.append(box(position, size, 0, 0, " "))
-
-textarray = []
-for index in range(81):
     text = sf.Text()
     
     text.font = font1
@@ -91,13 +88,15 @@ for index in range(81):
     text.character_size = 50
     text.color = sf.Color.WHITE
 
-    xx = square[index].position.x +20
-    yy = square[index].position.y +5
-    position = sf.Vector2(xx,yy)
 
-    text.position = position
+    xx = position.x + 20
+    yy = position.y + 5
+    textposition = sf.Vector2(xx,yy)
+    text.position = textposition
     
-    textarray.append(text)
+    square.append(box(position, size, 0, 0, " ",valueText = text))
+
+print(square[1].valueText.string)
 
 # given a mouse position give the index of the square
 def coor2index(position: sf.Vector2):
@@ -250,7 +249,8 @@ def overlaylayer(window):
 def textlayer(window):
     
     for index in range(81):
-        text = textarray[index]
+        #text = textarray[index]
+        text = square[index].valueText
         text.string = square[index].value
         if square[index].lock == 1:
             text.color = sf.Color.BLACK
