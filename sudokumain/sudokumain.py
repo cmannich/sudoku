@@ -79,24 +79,62 @@ def index2posSize(index: int):
 
 # initialize the squares
 square = []
-for index in range(81):
-    position, size = index2posSize(index)
-    text = sf.Text()
+def initSquare():
+    for index in range(81):
+        position, size = index2posSize(index)
+        text = sf.Text()
+        
+        text.font = font1
+        text.string = " " 
+        text.character_size = 50
+        text.color = sf.Color.WHITE
     
-    text.font = font1
-    text.string = " " 
-    text.character_size = 50
-    text.color = sf.Color.WHITE
-
-
-    xx = position.x + 20
-    yy = position.y + 5
-    textposition = sf.Vector2(xx,yy)
-    text.position = textposition
     
-    square.append(box(position, size, 0, 0, " ",valueText = text))
+        xx = position.x + 20
+        yy = position.y + 5
+        textposition = sf.Vector2(xx,yy)
+        text.position = textposition
+        
+        square.append(box(position, size, 0, 0, " ",valueText = text))
 
-print(square[1].valueText.string)
+colorSquare = []
+def initcolorMenu():
+    xorig = 700
+    yorig = 200
+    step = 60
+    color = 0
+
+    for x in range(2):
+        for y in range(4):
+            position = sf.Vector2(xorig + x*step,yorig + y*step)
+            size = sf.Vector2(50,50)
+            colorSquare.append(box(position, size, color, 0, " "))
+            color += 1
+
+def renderColorMenu(window):
+    xorig = 700
+    yorig = 200
+    step = 60
+    color = 0
+    
+    rectangle = sf.RectangleShape(sf.Vector2(52,52))
+    rectangle.position = sf.Vector2(xorig + step -1 ,yorig - step - 1)
+    rectangle.fill_color = sf.Color(0,0,0,255)
+    rectangle.outline_color = sf.Color(255,255,255,255)
+    rectangle.outline_thickness = 1
+    window.draw(rectangle)
+    
+    rectangle = sf.RectangleShape(sf.Vector2(50,50))
+    rectangle.outline_thickness = 0
+    rectangle.outline_color = getColor(0,255)
+
+    for box in colorSquare:
+            rectangle.position = box.position
+            rectangle.size = box.size
+            rectangle.fill_color = getColor(box.overlay)
+            window.draw(rectangle)
+
+
 
 # given a mouse position give the index of the square
 def coor2index(position: sf.Vector2):
@@ -183,12 +221,15 @@ def eventManager(window):
                 index = coor2index(event.position)
 
                 if index == -1: # Outside of the sudoku grid, placeholder for GUI work outside the sudoku
+                    #check colormenu
+                    checkColorMenu(event.position)
                     pass 
                 else:           # Inside the sudoku grid
-                    if square[index].overlay == 0:
-                        square[index].overlay = 1
-                    else:
+                    if square[index].overlay == overlayColor:
                         square[index].overlay = 0
+                    else:
+                        square[index].overlay = overlayColor
+ 
 
         if (event == sf.KeyEvent):
             pass
@@ -218,32 +259,46 @@ def eventManager(window):
        
     return running        
 
+def checkColorMenu(position):
+    global overlayColor
+    for box in colorSquare:
+        xx = position.x - box.position.x
+        yy = position.y - box.position.y
+        
+        if xx > 0 and xx < box.size.x:
+            if yy > 0 and yy < box.size.y:
+                overlayColor = box.overlay
+                print("Changed to: " + str(overlayColor))
+            
+        
+        
 # Just some predefined colors
 # right now they are translucent (alfa is 128)
-def getColor(color: int):
+def getColor(color: int, alpha = 128):
 
-    if color == 1:
-        return sf.Color(255,0,0,128)
+    if color == 0:
+        return sf.Color(0,0,0,0)
+    elif color == 1:
+        return sf.Color(255,0,0,alpha)
     elif color == 2:
-        return sf.Color(0,255,0,128)
+        return sf.Color(0,255,0,alpha)
     elif color == 3:
-        return sf.Color(0,0,255,128)
+        return sf.Color(0,0,255,alpha)
     elif color == 4:
-        return sf.Color(255,255,0,128)
+        return sf.Color(255,255,0,alpha)
     elif color == 5:
-        return sf.Color(0,255,255,128)
+        return sf.Color(0,255,255,alpha)
     elif color == 6:
-        return sf.Color(255,0,255,128)
+        return sf.Color(255,0,255,alpha)
     else:
-        return sf.Color(255,255,255,128)
+        return sf.Color(255,255,255,alpha)
 
 # This is where we can paint translucent squares on top of the sudoku grid
 def overlaylayer(window):
     for index in range(81):
-        if square[index].overlay == 1:
-            position = square[index].position
-            size = square[index].size
-            paintsquare(window, position, size, getColor(1))
+        position = square[index].position
+        size = square[index].size
+        paintsquare(window, position, size, getColor(square[index].overlay))
 
 # This is the rendering of the squares value 
 def textlayer(window):
@@ -391,18 +446,21 @@ def possibleLayer(window):
                     text.color = sf.Color(255,255,255,100)
                     text.position = sf.Vector2(xx + xxx, yy + yyy)
                     window.draw(text)
-        
-        
+
+
 # Create the main window
 window = sf.RenderWindow(sf.VideoMode(1024, 768), "PySFML test")
 window.vertical_synchronization = True
 
-
+#init square
+initSquare()
+initcolorMenu()
 # Start the game loop
 running = True
 
 # we do not want to see possible number at startup
 possible = False
+overlayColor = 1
 
 while running:
 
@@ -423,6 +481,8 @@ while running:
     textlayer(window)
     
     overlaylayer(window)
+    
+    renderColorMenu(window)
 
     window.display()
 
