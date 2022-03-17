@@ -97,45 +97,60 @@ def initSquare():
         
         square.append(box(position, size, 0, 0, " ",valueText = text))
 
-colorSquare = []
-def initcolorMenu():
-    xorig = 700
-    yorig = 200
-    step = 60
-    color = 0
 
-    for x in range(2):
-        for y in range(4):
-            position = sf.Vector2(xorig + x*step,yorig + y*step)
-            size = sf.Vector2(50,50)
-            colorSquare.append(box(position, size, color, 0, " "))
-            color += 1
-
-def renderColorMenu(window):
-    xorig = 700
-    yorig = 200
-    step = 60
-    color = 0
+class colorMenu():
+    def __init__(self, xpos = 700, ypos = 200):
+        self.position = sf.Vector2(xpos,ypos)
+        self.colorSquare = []
+        
+        self.xorig = 700
+        self.yorig = 200
+        self.step = 60
+        color = 0
     
-    rectangle = sf.RectangleShape(sf.Vector2(52,52))
-    rectangle.position = sf.Vector2(xorig + step -1 ,yorig - step - 1)
-    rectangle.fill_color = sf.Color(0,0,0,255)
-    rectangle.outline_color = sf.Color(255,255,255,255)
-    rectangle.outline_thickness = 1
-    window.draw(rectangle)
+        for x in range(2):
+            for y in range(4):
+                position = sf.Vector2(self.xorig + x*self.step,self.yorig + y*self.step)
+                size = sf.Vector2(50,50)
+                self.colorSquare.append(box(position, size, color, 0, " "))
+                color += 1
+
+    def renderColorMenu(self, window):
+        global overlayColor
+        
+        rectangle = sf.RectangleShape(sf.Vector2(52,52))
+        rectangle.position = sf.Vector2(self.xorig + self.step -1 ,self.yorig - self.step - 1)
+        rectangle.fill_color = sf.Color(0,0,0,255)
+        rectangle.outline_color = sf.Color(255,255,255,255)
+        rectangle.outline_thickness = 1
+        window.draw(rectangle)
+        
+        #rectangle = sf.RectangleShape(sf.Vector2(50,50))
+        rectangle.outline_thickness = 0
+        rectangle.fill_color = getColor(overlayColor)
+        rectangle.outline_color = getColor(0,255)
+        window.draw(rectangle)
+        
+        
     
-    rectangle = sf.RectangleShape(sf.Vector2(50,50))
-    rectangle.outline_thickness = 0
-    rectangle.outline_color = getColor(0,255)
+        for box in self.colorSquare:
+                rectangle.position = box.position
+                rectangle.size = box.size
+                rectangle.fill_color = getColor(box.overlay)
+                window.draw(rectangle)
 
-    for box in colorSquare:
-            rectangle.position = box.position
-            rectangle.size = box.size
-            rectangle.fill_color = getColor(box.overlay)
-            window.draw(rectangle)
+    def checkColorMenu(self, position):
+        global overlayColor
+        for box in self.colorSquare:
+            xx = position.x - box.position.x
+            yy = position.y - box.position.y
+            
+            if xx > 0 and xx < box.size.x:
+                if yy > 0 and yy < box.size.y:
+                    overlayColor = box.overlay
+                    print("Changed to: " + str(overlayColor))
 
-
-
+   
 # given a mouse position give the index of the square
 def coor2index(position: sf.Vector2):
     xx = ((position.x - 11) // 75)
@@ -222,7 +237,7 @@ def eventManager(window):
 
                 if index == -1: # Outside of the sudoku grid, placeholder for GUI work outside the sudoku
                     #check colormenu
-                    checkColorMenu(event.position)
+                    menu1.checkColorMenu(event.position)
                     pass 
                 else:           # Inside the sudoku grid
                     if square[index].overlay == overlayColor:
@@ -259,18 +274,7 @@ def eventManager(window):
        
     return running        
 
-def checkColorMenu(position):
-    global overlayColor
-    for box in colorSquare:
-        xx = position.x - box.position.x
-        yy = position.y - box.position.y
-        
-        if xx > 0 and xx < box.size.x:
-            if yy > 0 and yy < box.size.y:
-                overlayColor = box.overlay
-                print("Changed to: " + str(overlayColor))
-            
-        
+
         
 # Just some predefined colors
 # right now they are translucent (alfa is 128)
@@ -452,9 +456,11 @@ def possibleLayer(window):
 window = sf.RenderWindow(sf.VideoMode(1024, 768), "PySFML test")
 window.vertical_synchronization = True
 
+menu1 = colorMenu()
+
 #init square
 initSquare()
-initcolorMenu()
+
 # Start the game loop
 running = True
 
@@ -463,9 +469,10 @@ possible = False
 overlayColor = 1
 
 while running:
-
-    running = eventManager(window)
-
+    try:
+        running = eventManager(window)
+    except:
+        pass
     # Clear screen, draw the text, and update the window
     window.clear()
 
@@ -482,7 +489,7 @@ while running:
     
     overlaylayer(window)
     
-    renderColorMenu(window)
+    menu1.renderColorMenu(window)
 
     window.display()
 
