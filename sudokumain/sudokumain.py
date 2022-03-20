@@ -7,6 +7,18 @@ Created on Feb 20, 2022
 from sfml import sf
 
 focusIndex = -1
+
+# Start the game loop
+running = True
+
+# we do not want to see possible numbers at startup
+possible = 0
+only = 0
+lonely = 0
+pair = 0
+
+overlayColor = 1
+
 font = sf.Font.from_file("/usr/share/fonts/truetype/hack/Hack-Regular.ttf")
 font1 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 font4 = sf.Font.from_file("/usr/share/fonts/opentype/cantarell/Cantarell-Bold.otf")
@@ -14,9 +26,6 @@ font2 = sf.Font.from_file("/usr/share/fonts/truetype/noto/NotoSerifDisplay-Regul
 font3 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
 font5 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
 font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
-
-
-
 
 
 # Each sudoku square contains an object defined by the class box which contains all aspects and state of the square
@@ -97,14 +106,132 @@ def initSquare():
         
         square.append(box(position, size, 0, 0, " ",valueText = text))
 
+class possibleMenu():
+    def __init__(self, xpos = 700, ypos = 10):
+        self.position = sf.Vector2(xpos,ypos)
+        self.checkBox = []
 
+        step = 35
+        color = 0  
+        xsize = 27
+        ysize = 27
+        
+        position = sf.Vector2(xpos,ypos)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="Possible"))
+
+        position = sf.Vector2(xpos,ypos + step)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="Only"))
+
+        position = sf.Vector2(xpos,ypos + 2*step)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="Lonely"))
+
+        position = sf.Vector2(xpos,ypos + 3*step)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="Pair"))
+        
+    def render(self,window):
+        #checkbox1
+        rectangle = sf.RectangleShape(sf.Vector2(27,27))
+        
+        text = sf.Text()
+        text.font = font1
+        text.string = "" 
+        text.character_size = 23
+        text.color = sf.Color.WHITE
+        
+        for box in self.checkBox:
+            # checkbox rectangle
+            rectangle.position = box.position
+            rectangle.size = box.size
+            rectangle.fill_color = sf.Color.BLACK
+            rectangle.outline_color = sf.Color.WHITE
+            rectangle.outline_thickness = 1
+            window.draw(rectangle)
+
+            # checkbox filled?
+            rectangle.outline_thickness = 0
+            rectangle.position = sf.Vector2(box.position.x + 3, box.position.y + 3)
+            rectangle.size = sf.Vector2(box.size.x - 6, box.size.y - 6)
+            rectangle.fill_color = getColor(box.overlay,255)
+            window.draw(rectangle)
+            
+            #Text
+            text.position = sf.Vector2(box.position.x + box.size.x + 5, box.position.y)
+            text.string = box.valueText
+            window.draw(text)
+        
+    def check(self, position):
+        global possible, only,lonely,pair
+        print("Possible =" + str(possible))
+        for index in range(len(self.checkBox)):
+            box = self.checkBox[index]
+            xx = position.x - self.checkBox[index].position.x
+            yy = position.y - self.checkBox[index].position.y
+            
+            if xx > 0 and xx < box.size.x:
+                if yy > 0 and yy < box.size.y:
+                    if index == 0:
+                        if possible == 0:
+                            possible = 1
+                            self.checkBox[index].overlay = 7
+                            print("Possible ON")            
+                        else:
+                            possible = 0
+                            self.checkBox[index].overlay = 0
+                            print("Possible OFF")            
+                    if index == 1:
+                        if only == 0:
+                            only = 1
+                            self.checkBox[index].overlay = 7
+                            print("Possible ON")            
+                        else:
+                            only = 0
+                            self.checkBox[index].overlay = 0
+                            print("Possible OFF")            
+                    if index == 2:
+                        if lonely == 0:
+                            lonely = 1
+                            self.checkBox[index].overlay = 7
+                            print("Possible ON")            
+                        else:
+                            lonely = 0
+                            self.checkBox[index].overlay = 0
+                            print("Possible OFF")            
+                    if index == 3:
+                        if pair == 0:
+                            pair = 1
+                            self.checkBox[index].overlay = 7
+                            print("Possible ON")            
+                        else:
+                            pair = 0
+                            self.checkBox[index].overlay = 0
+                            print("Possible OFF")            
+                    #return possible
+
+    def update(self, index, onOff):
+        pass
+        if onOff:
+            self.checkBox[index].overlay = 7
+        else:
+            self.checkBox[index].overlay = 0
+        
+    def test(self,position):
+        global possible
+        if possible == 0:
+            possible = 1
+        else:
+            possible = 0
+             
 class colorMenu():
     def __init__(self, xpos = 700, ypos = 200):
         self.position = sf.Vector2(xpos,ypos)
         self.colorSquare = []
         
-        self.xorig = 700
-        self.yorig = 200
+        self.xorig = xpos
+        self.yorig = ypos
         self.step = 60
         color = 0
     
@@ -115,8 +242,8 @@ class colorMenu():
                 self.colorSquare.append(box(position, size, color, 0, " "))
                 color += 1
 
-    def renderColorMenu(self, window):
-        global overlayColor
+    def render(self, window):
+        #global overlayColor
         
         rectangle = sf.RectangleShape(sf.Vector2(52,52))
         rectangle.position = sf.Vector2(self.xorig + self.step -1 ,self.yorig - self.step - 1)
@@ -139,7 +266,7 @@ class colorMenu():
                 rectangle.fill_color = getColor(box.overlay)
                 window.draw(rectangle)
 
-    def checkColorMenu(self, position):
+    def check(self, position):
         global overlayColor
         for box in self.colorSquare:
             xx = position.x - box.position.x
@@ -221,6 +348,7 @@ def eventManager(window):
     global focusIndex
     global possible
     global square
+    global menu2
     
     for event in window.events:
         if (type(event) == sf.CloseEvent):
@@ -236,9 +364,11 @@ def eventManager(window):
                 index = coor2index(event.position)
 
                 if index == -1: # Outside of the sudoku grid, placeholder for GUI work outside the sudoku
-                    #check colormenu
-                    menu1.checkColorMenu(event.position)
-                    pass 
+                    
+                    menu1.check(event.position) # overlay color
+                    menu2.check(event.position) # possibility options
+                    
+                     
                 else:           # Inside the sudoku grid
                     if square[index].overlay == overlayColor:
                         square[index].overlay = 0
@@ -268,8 +398,10 @@ def eventManager(window):
             if c =="P" or c=="p":     # Show the cheats, possible combinations, rudimentary right now
                 if possible == False:
                     updatePossible()
+                    menu2.update(0,1)
                     possible = True
                 else:
+                    menu2.update(0,0)
                     possible = False
        
     return running        
@@ -427,7 +559,7 @@ def updatePossible():
         
 # And now render the possible number layer        
 def possibleLayer(window):
-    global square
+    #global square
     
     if possible == False:
         return 0
@@ -456,23 +588,20 @@ def possibleLayer(window):
 window = sf.RenderWindow(sf.VideoMode(1024, 768), "PySFML test")
 window.vertical_synchronization = True
 
-menu1 = colorMenu()
+#init menus
+menu1 = colorMenu(700, 400)
+menu2 = possibleMenu(700, 10)
 
 #init square
 initSquare()
 
-# Start the game loop
-running = True
-
-# we do not want to see possible number at startup
-possible = False
-overlayColor = 1
-
 while running:
     try:
-        running = eventManager(window)
+        #running = eventManager(window)
+        pass
     except:
         pass
+    running = eventManager(window)
     # Clear screen, draw the text, and update the window
     window.clear()
 
@@ -489,8 +618,9 @@ while running:
     
     overlaylayer(window)
     
-    menu1.renderColorMenu(window)
-
+    menu1.render(window)
+    menu2.render(window)
+    
     window.display()
 
 if __name__ == '__main__':
