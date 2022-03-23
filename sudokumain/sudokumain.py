@@ -5,6 +5,20 @@ Created on Feb 20, 2022
 '''
 # Include the PySFML extension
 from sfml import sf
+import json
+
+ttt = { "Squares" : [
+    { "Id" : 0, "Value" : "0", "Locked" : 0},
+    { "Id" : 1, "Value" : "4", "Locked" : 0},
+    { "Id" : 2, "Value" : "3", "Locked" : 1},
+    { "Id" : 3, "Value" : "5", "Locked" : 0},
+    { "Id" : 4, "Value" : "6", "Locked" : 0}
+    ]}
+
+print(json.dumps(ttt, indent=4))
+exit()
+
+
 
 focusIndex = -1
 
@@ -19,13 +33,14 @@ pair = 0
 
 overlayColor = 1
 
-font = sf.Font.from_file("/usr/share/fonts/truetype/hack/Hack-Regular.ttf")
-font1 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
-font4 = sf.Font.from_file("/usr/share/fonts/opentype/cantarell/Cantarell-Bold.otf")
-font2 = sf.Font.from_file("/usr/share/fonts/truetype/noto/NotoSerifDisplay-Regular.ttf")
-font3 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
-font5 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
-font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
+font = sf.Font.from_file("/usr/share/fonts/truetype/freefont/FreeSans.ttf")
+font1 = sf.Font.from_file("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf")
+#	font1 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+#	font4 = sf.Font.from_file("/usr/share/fonts/opentype/cantarell/Cantarell-Bold.otf")
+#	font2 = sf.Font.from_file("/usr/share/fonts/truetype/noto/NotoSerifDisplay-Regular.ttf")
+#	font3 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
+#	font5 = sf.Font.from_file("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
+#	font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-Bold.ttf")
 
 
 # Each sudoku square contains an object defined by the class box which contains all aspects and state of the square
@@ -45,7 +60,13 @@ font6 = sf.Font.from_file("/usr/share/fonts/truetype/liberation2/LiberationMono-
 #    The font renderer creates a point in the beginning of each string. 
 #    Some fonts always has an extra character in the beginning of each string 
 
+saveFile = "sudoku_save.json"
 
+def save():
+    pass
+
+def load():
+    pass
 
 class box:
     def __init__(self, position: sf.Vector2, size: sf.Vector2, overlay = 0, background = 0 , value = " ", lock = 0, valueText = sf.Text()):
@@ -209,7 +230,7 @@ class possibleMenu():
                             pair = 0
                             self.checkBox[index].overlay = 0
                             print("Possible OFF")            
-                    #return possible
+                    updatePossible()
 
     def update(self, index, onOff):
         pass
@@ -550,15 +571,77 @@ def getPossible(index):
     #print(possibleList)
     return possibleList
 
+# check a square if one of the possible numbers in the square
+# is the only possible number in its row, column or quadrant
+def updateOnly(index):
+
+	for row in range(9):
+		rowList = getRowList(row)
+		updateOnlyList(rowList)
+
+	for column in range(9):
+		columnList = getColumnList(column)
+		updateOnlyList(columnList)
+
+	for quadrant in range(9):
+		quadrantList = getQuadrantList(quadrant)
+		updateOnlyList(quadrantList)
+		
+	
+	#print(rowList)
+	
+def updateOnlyList(indexList):
+	singeltonIndexes = []
+	totalCount = [0,0,0,0,0,0,0,0,0]
+	for index in indexList:
+		possible = square[index].possible
+		for value in possible:
+			if value > 0:
+				totalCount[value - 1] = totalCount[value - 1] + 1
+	print(totalCount)
+	# we now know how many times each number apears
+	# if a number only apears 1 time we must save the index (find it again first)
+	numbers = []
+	for number in range(9):
+		if totalCount[number] != 0 and totalCount[number] < 2:
+			numbers.append(number)
+	print(numbers)
+	
+	# OK did we find any?
+	if len(numbers):
+		# yes
+		for x in numbers:
+			# find the index, there will only be one index for each found number
+			for index in indexList:
+				# check if possibility contains number
+				possible = square[index].possible
+				if possible[x] > 0:
+					singeltonIndexes.append(index) # found index
+		print(singeltonIndexes)
+		
+		#Update possible square
+		for x in range(len(singeltonIndexes)):
+			index = singeltonIndexes[x]
+			value = numbers[x]
+			square[index].possible = [0,0,0,0,0,0,0,0,0]
+			square[index].possible[value] = value + 1
+			print(square[index].possible)
+
+	
+	
+	
+		
 # Update each square with the possible numbers        
 def updatePossible():
     #global square
-    
-    for index in range(81):
-        square[index].possible = getPossible(index)
-        
+
+	for index in range(81):
+		square[index].possible = getPossible(index)
+	if only == 1:
+		updateOnly(13)
+
 # And now render the possible number layer        
-def possibleLayer(window):
+def renderPossible(window):
     #global square
     
     if possible == False:
@@ -612,7 +695,7 @@ while running:
     
     backgroundlayer(window)
     
-    possibleLayer(window)
+    renderPossible(window)
    
     textlayer(window)
     
