@@ -7,16 +7,16 @@ Created on Feb 20, 2022
 from sfml import sf
 import json
 
-ttt = { "Squares" : [
-    { "Id" : 0, "Value" : "0", "Locked" : 0},
-    { "Id" : 1, "Value" : "4", "Locked" : 0},
-    { "Id" : 2, "Value" : "3", "Locked" : 1},
-    { "Id" : 3, "Value" : "5", "Locked" : 0},
-    { "Id" : 4, "Value" : "6", "Locked" : 0}
-    ]}
-
-print(json.dumps(ttt, indent=4))
-exit()
+# ttt = { "Squares" : [
+#     { "Id" : 0, "Value" : "0", "Locked" : 0},
+#     { "Id" : 1, "Value" : "4", "Locked" : 0},
+#     { "Id" : 2, "Value" : "3", "Locked" : 1},
+#     { "Id" : 3, "Value" : "5", "Locked" : 0},
+#     { "Id" : 4, "Value" : "6", "Locked" : 0}
+#     ]}
+#
+# print(json.dumps(ttt, indent=4))
+# exit()
 
 
 
@@ -63,10 +63,36 @@ font1 = sf.Font.from_file("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf")
 saveFile = "sudoku_save.json"
 
 def save():
-    pass
+    saveList = []
+    for index in range(len(square)):
+        box = square[index]
+        value = box.value
+        lock = box.lock
+        key = {"Index": index, "Value": value, "Lock": lock}
+        saveList.append(key)
+        
+    output = {"Square": saveList}
+    f = open(saveFile, "w")
+    f.write(json.dumps(output, indent=4))
+    f.close()
 
 def load():
-    pass
+    f = open(saveFile)
+    y = json.loads(f.read())
+    saveList = y["Square"]
+    
+    for dict in saveList:
+        index = dict["Index"]
+        value = dict["Value"]
+        lock = dict["Lock"]
+        square[index].value = value
+        square[index].lock = lock
+
+def clear():
+    for index in range(len(square)):
+        square[index].value = " "
+        square[index].lock = 0
+        square[index].overlay = 0
 
 class box:
     def __init__(self, position: sf.Vector2, size: sf.Vector2, overlay = 0, background = 0 , value = " ", lock = 0, valueText = sf.Text()):
@@ -126,6 +152,71 @@ def initSquare():
         text.position = textposition
         
         square.append(box(position, size, 0, 0, " ",valueText = text))
+
+class fileMenu():
+    def __init__(self, xpos = 700, ypos = 10):
+        self.position = sf.Vector2(xpos,ypos)
+        self.checkBox = []
+        
+        step = 35
+        color = 0  
+        xsize = 80
+        ysize = 27
+
+        position = sf.Vector2(xpos,ypos)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="SAVE"))
+
+        position = sf.Vector2(xpos,ypos + step)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="LOAD"))
+
+        position = sf.Vector2(xpos,ypos + 2*step)
+        size = sf.Vector2(xsize,ysize)
+        self.checkBox.append(box(position, size, color, valueText="CLEAR"))
+ 
+    def render(self,window):
+        #checkbox1
+        rectangle = sf.RectangleShape(sf.Vector2(27,27))
+        
+        text = sf.Text()
+        text.font = font1
+        text.string = "" 
+        text.character_size = 23
+        text.color = sf.Color.WHITE
+        
+        for box in self.checkBox:
+            # Button rectangle
+            rectangle.position = box.position
+            rectangle.size = box.size
+            rectangle.fill_color = sf.Color.BLACK
+            rectangle.outline_color = sf.Color.WHITE
+            rectangle.outline_thickness = 1
+            window.draw(rectangle)
+            
+            #Text
+            text.position = sf.Vector2(box.position.x + 5, box.position.y)
+            text.string = box.valueText
+            window.draw(text)
+        
+    def check(self, position):
+        for index in range(len(self.checkBox)):
+            box = self.checkBox[index]
+            xx = position.x - self.checkBox[index].position.x
+            yy = position.y - self.checkBox[index].position.y
+            
+            if xx > 0 and xx < box.size.x:
+                if yy > 0 and yy < box.size.y:
+                    if index == 0:
+                        save()
+                        print("SAVE")            
+                    if index == 1:
+                        load()
+                        print("LOAD")            
+                    if index == 2:
+                        clear()
+                        print("CLEAR")            
+
 
 class possibleMenu():
     def __init__(self, xpos = 700, ypos = 10):
@@ -388,7 +479,7 @@ def eventManager(window):
                     
                     menu1.check(event.position) # overlay color
                     menu2.check(event.position) # possibility options
-                    
+                    menu3.check(event.position)
                      
                 else:           # Inside the sudoku grid
                     if square[index].overlay == overlayColor:
@@ -674,7 +765,7 @@ window.vertical_synchronization = True
 #init menus
 menu1 = colorMenu(700, 400)
 menu2 = possibleMenu(700, 10)
-
+menu3 = fileMenu(900,10)
 #init square
 initSquare()
 
@@ -703,6 +794,8 @@ while running:
     
     menu1.render(window)
     menu2.render(window)
+    menu3.render(window)
+    
     
     window.display()
 
